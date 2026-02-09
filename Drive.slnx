@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Drive.Api/Drive.Api.csproj" />
+  <Project Path="Drive.Business/Drive.Business.csproj" />
+  <Project Path="Drive.Domain/Drive.Domain.csproj" />
+  <Project Path="Drive.Infrastructure/Drive.Infrastructure.csproj" />
+</Solution>
