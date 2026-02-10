@@ -4,17 +4,26 @@ using Drive.Business.UseCases.ListFiles;
 using Drive.Business.UseCases.UploadFile;
 using Drive.Business.UseCases.DownloadFile;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Drive.Api.Controllers;
 
 [ApiController]
 [Route("files")]
+[Authorize]
 public class FilesController : ControllerBase
 {
     private readonly UploadFileUseCase _upload;
     private readonly ListFilesUseCase _list;
     private readonly DeleteFileUseCase _delete;
     private readonly DownloadFileUseCase _download;
+
+
+    private string? GetUserId()
+    {
+        return User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
 
     public FilesController(UploadFileUseCase upload, ListFilesUseCase list, DeleteFileUseCase delete,DownloadFileUseCase download)
     {
@@ -36,8 +45,10 @@ public class FilesController : ControllerBase
 
         await using var stream = file.OpenReadStream();
 
-        // Por enquanto: usuário fixo (até JWT)
-        var ownerUserId = "dev-user";
+
+        var ownerUserId = GetUserId();
+        if (string.IsNullOrWhiteSpace(ownerUserId))
+            return Unauthorized();
 
         var req = new UploadFileRequest(
             OriginalName: file.FileName,
@@ -56,7 +67,9 @@ public class FilesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] string? search, CancellationToken ct)
     {
-        var ownerUserId = "dev-user";
+        var ownerUserId = GetUserId();
+        if(string.IsNullOrWhiteSpace(ownerUserId))
+            return Unauthorized();
 
         var req = new ListFilesRequest(
             OwnerUserId: ownerUserId,
@@ -71,11 +84,13 @@ public class FilesController : ControllerBase
     [HttpGet("{id:guid}/download")]
     public async Task<IActionResult> Download(Guid id, CancellationToken ct)
     {
-        var OwnerUserId = "dev-user";
+        var ownerUserId = GetUserId();
+        if(string.IsNullOrWhiteSpace(ownerUserId))
+            return Unauthorized();
 
         try
         {
-            var result = await _download.ExecuteAsync(new DownloadFileRequest(id, OwnerUserId),ct);
+            var result = await _download.ExecuteAsync(new DownloadFileRequest(id, ownerUserId),ct);
 
             return File(
                 fileStream: result.Content,
