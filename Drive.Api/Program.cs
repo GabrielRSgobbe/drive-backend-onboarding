@@ -8,6 +8,7 @@ using Minio;
 using Drive.Business.UseCases.UploadFile;
 using Drive.Business.UseCases.ListFiles;
 using Drive.Business.UseCases.DeleteFile;
+using Drive.Business.UseCases.DownloadFile;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +59,8 @@ builder.Services.AddScoped<UploadFileUseCase>();
 builder.Services.AddScoped<ListFilesUseCase>();
 
 builder.Services.AddScoped<DeleteFileUseCase>();
+
+builder.Services.AddScoped<DownloadFileUseCase>();
 
 var app = builder.Build();
 
