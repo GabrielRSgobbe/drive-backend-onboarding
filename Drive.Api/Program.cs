@@ -9,6 +9,12 @@ using Drive.Business.UseCases.UploadFile;
 using Drive.Business.UseCases.ListFiles;
 using Drive.Business.UseCases.DeleteFile;
 using Drive.Business.UseCases.DownloadFile;
+using Drive.Infrastructure.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +32,44 @@ builder.Services.AddSwaggerGen();
 // DB (Postgres)
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+// Identity
+
+builder.Services.AddIdentityCore<ApplicationUser> (options =>
+{
+    options.User.RequireUniqueEmail = true;
+
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddSignInManager();
+
+//JWT
+
+var jwtKey = builder.Configuration["Jwt:Key"]!;
+var jwtIssuer = builder.Configuration ["Jwt:Issuer"]!;
+var jwtAudience = builder.Configuration["Jwt:Audience"]!;
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+
 
 // MinIO client
 var endpoint = builder.Configuration["Storage:Minio:Endpoint"]!;
@@ -53,6 +97,7 @@ builder.Services.AddScoped<IStorageService>(sp =>
     return new MinioStorageService(minio, bucket);
 });
 
+// Builder services
 
 builder.Services.AddScoped<UploadFileUseCase>();
 
@@ -75,6 +120,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // (Auth virá aqui depois)
 // app.UseAuthentication();
