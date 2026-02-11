@@ -27,6 +27,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+
+// CORS (libera o front)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Front", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
+
+
 // Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 
@@ -49,7 +64,7 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Cole: Bearer {seu_token}"
     });
 
-    // 👇 NOVO JEITO (OpenApi 2.x)
+    //  NOVO JEITO (OpenApi 2.x)
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         [new OpenApiSecuritySchemeReference("Bearer", document)] = []
@@ -141,10 +156,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 app.UseHttpsRedirection();
+
+app.UseCors("Front");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 app.MapControllers();
 
