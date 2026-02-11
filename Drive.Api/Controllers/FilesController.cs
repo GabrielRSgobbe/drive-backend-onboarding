@@ -113,9 +113,11 @@ public class FilesController : ControllerBase
 
 
     [HttpDelete("{id:guid}")]
-public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
-{
-    var ownerUserId = "dev-user";
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+    var ownerUserId = GetUserId();
+    if(string.IsNullOrWhiteSpace(ownerUserId))
+        return Unauthorized();
 
     try
     {
@@ -130,7 +132,7 @@ public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         return Forbid();
     }
-}
+    }
 
 
 
